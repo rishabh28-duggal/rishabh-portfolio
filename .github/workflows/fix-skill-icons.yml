@@ -1,0 +1,38 @@
+name: Fix skill icons
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-skill-icons.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace unreliable icon sources
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text()
+          replacements = {
+            'https://cdn.simpleicons.org/openai': 'https://api.iconify.design/simple-icons:openai.svg',
+            'https://cdn.simpleicons.org/powerbi': 'https://api.iconify.design/logos:microsoft-power-bi.svg',
+            'https://cdn.simpleicons.org/microsoftexcel': 'https://api.iconify.design/logos:microsoft-excel.svg',
+            'https://cdn.simpleicons.org/moengage': 'https://www.google.com/s2/favicons?domain=moengage.com&sz=128',
+          }
+          for old, new in replacements.items():
+              s = s.replace(old, new)
+          p.write_text(s)
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Use reliable icons for OpenAI, Power BI, Excel and MoEngage"
+          git push
